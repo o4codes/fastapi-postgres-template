@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: str
     postgres_db: str
+    
+    # Redis settings
+    redis_host: str = Field(default="localhost")
+    redis_port: int = Field(default=6379)
+    redis_password: str = Field(default=None)
 
 # Create a single instance of Settings
 _settings = Settings()
