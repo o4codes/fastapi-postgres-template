@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.users import schema
 from app.api.users.services import UserService
 from app.configs.db import get_db_session
-from app.commons.pagination import PaginationParams
+from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
 
 router = APIRouter(
     prefix="/users",
@@ -47,33 +47,56 @@ async def create_user(
 
 @router.get(
     "",
-    response_model=schema.UserList,
+    response_model=CursorPaginatedResponse[schema.UserResponse],
     summary="List all users",
 )
 async def list_users(
-    pagination: PaginationParams = Depends(),
+    cursor: str | None = None,
+    limit: int = 10,
+    order_by: str | None = None,
+    direction: str = "forward",
     include_deleted: bool = False,
     db: AsyncSession = Depends(get_db_session),
-) -> schema.UserList:
+) -> CursorPaginatedResponse[schema.UserResponse]:
     """
-    List all users with pagination.
+    List all users with cursor-based pagination.
 
     Args:
-        pagination: Pagination parameters
+        cursor: Cursor for current position
+        limit: Number of items per page (default: 10)
+        order_by: Field to order by. Options: id, email, created_datetime, updated_datetime,
+            first_name, last_name (default: id)
+        direction: Pagination direction: 'forward' or 'backward' (default: forward)
         include_deleted: Whether to include soft-deleted users
         db: Database session
 
     Returns:
-        List of users
+        Cursor paginated list of users
     """
     service = UserService(db)
-    users = await service.list_users(
-        skip=pagination.skip,
-        limit=pagination.limit,
+
+    pagination = CursorPaginationParams(
+        cursor=cursor, limit=limit, order_by=order_by, direction=direction
+    )
+
+    (
+        items,
+        has_next,
+        has_previous,
+        next_cursor,
+        previous_cursor,
+    ) = await service.list_users(
+        pagination=pagination,
         include_deleted=include_deleted,
     )
-    total = await service.count_users(include_deleted=include_deleted)
-    return schema.UserList(total=total, items=users)
+
+    return CursorPaginatedResponse.create(
+        items=items,
+        has_next=has_next,
+        has_previous=has_previous,
+        next_cursor=next_cursor,
+        previous_cursor=previous_cursor,
+    )
 
 
 @router.get(

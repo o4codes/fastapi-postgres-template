@@ -1,5 +1,7 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
+
+from app.commons.pagination import CursorPaginationParams
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,8 +57,9 @@ class PermissionService:
                 )
 
         # Update permission
+        update_data = data.model_dump(exclude_unset=True)
         updated_permission = await self.repository.update(
-            permission, **data.model_dump(exclude_unset=True)
+            instance=permission, fields=update_data
         )
         return updated_permission
 
@@ -72,12 +75,24 @@ class PermissionService:
         return permission
 
     async def list_permissions(
-        self, skip: int = 0, limit: int = 100
-    ) -> list[Permission]:
+        self,
+        pagination: CursorPaginationParams,
+    ) -> Tuple[List[Permission], bool, bool, str | None, str | None]:
         """
-        List permissions with pagination.
+        List permissions with cursor-based pagination.
+
+        Args:
+            pagination: Cursor pagination parameters
+
+        Returns:
+            Tuple containing:
+            - List of permissions
+            - Whether there are more results after
+            - Whether there are more results before
+            - Next cursor if there are more results
+            - Previous cursor if applicable
         """
-        return await self.repository.list(skip=skip, limit=limit)
+        return await self.repository.list_with_cursor(params=pagination)
 
     async def delete_permission(self, permission_id: UUID) -> None:
         """

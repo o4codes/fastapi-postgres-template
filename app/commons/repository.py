@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
-from typing import Any, Generic, List, Optional, Type, TypeVar
+from typing import Any, Generic, List, Optional, Tuple, Type, TypeVar
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import select, func, desc, asc
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.commons.pagination import CursorPaginationParams, CursorPagination
 from app.commons.models import SoftDeleteMixin
 
 ModelType = TypeVar("ModelType")
@@ -13,7 +14,7 @@ CreateSchemaType = TypeVar("CreateSchemaType")
 UpdateSchemaType = TypeVar("UpdateSchemaType")
 
 
-class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class BaseRepository(Generic[ModelType]):
     """
     Base repository with common CRUD operations
     """
@@ -117,21 +118,26 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def update(
         self,
-        id: UUID,
-        schema: UpdateSchemaType,
-        **kwargs: Any,
-    ) -> Optional[ModelType]:
-        """Update a record."""
-        obj = await self.get_or_404(id)
-        update_data = schema.model_dump(exclude_unset=True)
-        update_data.update(kwargs)
+        instance: ModelType,
+        fields: dict[str, Any],
+    ) -> ModelType:
+        """
+        Update a record.
 
-        for field, value in update_data.items():
-            setattr(obj, field, value)
+        Args:
+            instance: Model instance to update
+            fields: Dictionary of field names and values to update
+
+        Returns:
+            Updated model instance
+        """
+        for field, value in fields.items():
+            if hasattr(instance, field):
+                setattr(instance, field, value)
 
         await self.db_session.commit()
-        await self.db_session.refresh(obj)
-        return obj
+        await self.db_session.refresh(instance)
+        return instance
 
     async def delete(self, id: UUID) -> bool:
         """Delete a record."""
@@ -147,6 +153,94 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await self.db_session.commit()
 
         return True
+
+    async def list_with_cursor(
+        self,
+        params: CursorPaginationParams,
+        filters: dict[str, Any] | None = None,
+    ) -> Tuple[List[ModelType], bool, bool, str | None, str | None]:
+        """
+        Get a list of records using cursor-based pagination.
+
+        Args:
+            params: Cursor pagination parameters
+            filters: Additional filters to apply
+
+        Returns:
+            Tuple containing:
+            - List of records
+            - Whether there are more records after
+            - Whether there are more records before
+            - Next cursor if there are more records
+            - Previous cursor if applicable
+        """
+        # Start building the query
+        query = select(self.model)
+
+        # Handle soft delete
+        if issubclass(self.model, SoftDeleteMixin):
+            query = query.where(self.model.deleted_datetime.is_(None))
+
+        # Apply additional filters
+        if filters:
+            for field, value in filters.items():
+                if hasattr(self.model, field):
+                    query = query.where(getattr(self.model, field) == value)
+
+        # Get the order field, default to id
+        order_field = getattr(self.model, params.order_by or "id")
+
+        # Parse cursor if provided
+        if params.cursor:
+            try:
+                cursor_data = CursorPagination.decode_cursor(params.cursor)
+                cursor_value = cursor_data.get("value")
+                if cursor_value:
+                    if params.direction == "forward":
+                        query = query.where(order_field > cursor_value)
+                    else:
+                        query = query.where(order_field < cursor_value)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid cursor format",
+                )
+
+        # Apply ordering
+        if params.direction == "forward":
+            query = query.order_by(asc(order_field))
+        else:
+            query = query.order_by(desc(order_field))
+
+        # Fetch one extra to determine if there are more results
+        query = query.limit(params.limit + 1)
+        result = await self.db_session.execute(query)
+        items = list(result.scalars().all())
+
+        # Determine if there are more results
+        has_extra = len(items) > params.limit
+        if has_extra:
+            if params.direction == "forward":
+                items = items[:-1]  # Remove last item
+            else:
+                items = items[1:]  # Remove first item
+
+        # Create cursors
+        next_cursor = None
+        previous_cursor = None
+
+        if items:
+            if params.direction == "forward" and has_extra:
+                next_cursor = CursorPagination.encode_cursor(
+                    {"value": getattr(items[-1], params.order_by or "id")}
+                )
+
+            if params.cursor:
+                previous_cursor = CursorPagination.encode_cursor(
+                    {"value": getattr(items[0], params.order_by or "id")}
+                )
+
+        return items, has_extra, bool(params.cursor), next_cursor, previous_cursor
 
     async def count(self, **filters: Any) -> int:
         """

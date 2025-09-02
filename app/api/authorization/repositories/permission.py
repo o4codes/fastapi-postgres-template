@@ -5,13 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.authorization.models import Permission
-from app.api.authorization.schema.permission import PermissionCreate, PermissionUpdate
 from app.commons.repository import BaseRepository
 
 
-class PermissionRepository(
-    BaseRepository[Permission, PermissionCreate, PermissionUpdate]
-):
+class PermissionRepository(BaseRepository[Permission]):
     """Repository for handling direct database operations on Permission entities."""
 
     def __init__(self, db_session: AsyncSession):

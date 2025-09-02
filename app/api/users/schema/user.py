@@ -105,8 +105,8 @@ class UserResponse(UserBase, UUIDSchema, TimestampSchema, SoftDeleteSchema):
                 "is_active": True,
                 "is_verified": True,
                 "last_login": "2025-09-02T10:00:00Z",
-                "created_at": "2025-09-02T09:00:00Z",
-                "updated_at": "2025-09-02T09:00:00Z",
+                "created_datetime": "2025-09-02T09:00:00Z",
+                "updated_datetime": "2025-09-02T09:00:00Z",
                 "roles": [],
                 "permissions": [],
             }
@@ -150,8 +150,8 @@ class UserList(BaseSchema):
                         "is_active": True,
                         "is_verified": True,
                         "last_login": "2025-09-02T10:00:00Z",
-                        "created_at": "2025-09-02T09:00:00Z",
-                        "updated_at": "2025-09-02T09:00:00Z",
+                        "created_datetime": "2025-09-02T09:00:00Z",
+                        "updated_datetime": "2025-09-02T09:00:00Z",
                         "roles": [],
                         "permissions": [],
                     }

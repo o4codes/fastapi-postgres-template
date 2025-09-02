@@ -1,14 +1,17 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 
 from app.api.users.models import User
 from app.api.users.schema import UserUpdate, UserCreate
 from app.api.users.repository import UserRepository
 from app.api.authorization.models import Role, Permission
 from app.api.authorization.services import RoleService
-from app.commons.exceptions import NotFoundException, ValidationError
+from app.commons.pagination import CursorPaginationParams
 from app.commons.security import hash_password, verify_password
 
 
@@ -24,20 +27,39 @@ class UserService:
         """Get user by ID."""
         user = await self.repository.get_by_id_with_relations(id)
         if not user:
-            raise NotFoundException(f"User with id {id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
         return user
 
     async def list_users(
         self,
-        skip: int = 0,
-        limit: int = 10,
+        pagination: CursorPaginationParams,
         include_deleted: bool = False,
-    ) -> List[User]:
-        """List users with pagination."""
-        return await self.repository.list_with_relations(
-            skip=skip,
-            limit=limit,
-            include_deleted=include_deleted,
+    ) -> Tuple[List[User], bool, bool, str | None, str | None]:
+        """
+        List users with cursor-based pagination.
+
+        Args:
+            pagination: Cursor pagination parameters
+            include_deleted: Whether to include soft-deleted users
+
+        Returns:
+            Tuple containing:
+            - List of users
+            - Whether there are more users after
+            - Whether there are more users before
+            - Next cursor if there are more users
+            - Previous cursor if applicable
+        """
+        filters = {}
+        if not include_deleted:
+            filters["deleted_datetime"] = None
+
+        return await self.repository.list_with_cursor(
+            params=pagination,
+            filters=filters,
         )
 
     async def count_users(self, include_deleted: bool = False) -> int:
@@ -64,9 +86,15 @@ class UserService:
         """Create a new user."""
         # Check if email or phone already exists
         if await self.get_by_email(email):
-            raise ValidationError(f"Email {email} is already taken")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email {email} already exists",
+            )
         if phone_number and await self.get_by_phone(phone_number):
-            raise ValidationError(f"Phone number {phone_number} is already taken")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Phone number {phone_number} already exists",
+            )
 
         # Hash password
         password = hash_password(password)
@@ -93,6 +121,10 @@ class UserService:
         is_verified: Optional[bool] = None,
     ) -> User:
         """Update user details."""
+        # Get user instance first
+        user = await self.get_by_id(user_id)
+
+        # Build update data
         update_data = {}
         if first_name is not None:
             update_data["first_name"] = first_name
@@ -105,10 +137,7 @@ class UserService:
         if is_verified is not None:
             update_data["is_verified"] = is_verified
 
-        # Create a schema object for update
-        update_schema = UserUpdate(**update_data)
-
-        return await self.repository.update(id=user_id, schema=update_schema)
+        return await self.repository.update(instance=user, fields=update_data)
 
     async def delete(self, user: User) -> None:
         """Delete a user."""
@@ -147,7 +176,9 @@ class UserService:
     async def update_last_login(self, user: User) -> User:
         """Update user's last login timestamp."""
         user.last_login = datetime.now()
-        return await self.repository.update(user)
+        return await self.repository.update(
+            instance=user, fields={"last_login": user.last_login}
+        )
 
     async def get_users_by_role(self, role: Role) -> List[User]:
         """Get all users with a specific role."""
@@ -189,7 +220,10 @@ class UserService:
 
         # Verify current password
         if not verify_password(current_password, user.password):
-            raise ValidationError("Current password is incorrect")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect current password",
+            )
 
         # Hash and update new password
         update_data = {"password": hash_password(new_password)}

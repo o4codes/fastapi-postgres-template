@@ -1,5 +1,7 @@
-from typing import List
+from typing import List, Tuple
 from uuid import UUID
+
+from app.commons.pagination import CursorPaginationParams
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +36,9 @@ class RoleService:
         if data.is_default:
             current_default = await self.role_repository.get_default_role()
             if current_default:
-                await self.role_repository.update(current_default, is_default=False)
+                await self.role_repository.update(
+                    instance=current_default, fields={"is_default": False}
+                )
 
         # Get permissions if IDs provided
         permissions = []
@@ -84,7 +88,9 @@ class RoleService:
         if data.is_default and not role.is_default:
             current_default = await self.role_repository.get_default_role()
             if current_default and current_default.id != role.id:
-                await self.role_repository.update(current_default, is_default=False)
+                await self.role_repository.update(
+                    instance=current_default, fields={"is_default": False}
+                )
 
         # Update permissions if provided
         if data.permission_ids is not None:
@@ -100,7 +106,9 @@ class RoleService:
 
         # Update other fields
         update_data = data.model_dump(exclude={"permission_ids"}, exclude_unset=True)
-        updated_role = await self.role_repository.update(role, **update_data)
+        updated_role = await self.role_repository.update(
+            instance=role, fields=update_data
+        )
         return updated_role
 
     async def get_role(self, role_id: UUID) -> Role:
@@ -114,11 +122,25 @@ class RoleService:
             )
         return role
 
-    async def list_roles(self, skip: int = 0, limit: int = 100) -> List[Role]:
+    async def list_roles(
+        self,
+        pagination: CursorPaginationParams,
+    ) -> Tuple[List[Role], bool, bool, str | None, str | None]:
         """
-        List roles with pagination.
+        List roles with cursor-based pagination.
+
+        Args:
+            pagination: Cursor pagination parameters
+
+        Returns:
+            Tuple containing:
+            - List of roles
+            - Whether there are more results after
+            - Whether there are more results before
+            - Next cursor if there are more results
+            - Previous cursor if applicable
         """
-        return await self.role_repository.list(skip=skip, limit=limit)
+        return await self.role_repository.list_with_cursor(params=pagination)
 
     async def delete_role(self, role_id: UUID) -> None:
         """

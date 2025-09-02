@@ -1,4 +1,3 @@
-from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -7,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.authorization import schema as auth_schema
 from app.api.authorization import services as auth_services
 from app.configs.db import get_db_session
-from app.commons.pagination import PaginationParams
+from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
 
 router = APIRouter(
     prefix="/roles",
@@ -42,29 +41,52 @@ async def create_role(
 
 @router.get(
     "",
-    response_model=List[auth_schema.RoleResponse],
+    response_model=CursorPaginatedResponse[auth_schema.RoleResponse],
     summary="List all roles",
 )
 async def list_roles(
-    pagination: PaginationParams = Depends(),
+    cursor: str | None = None,
+    limit: int = 10,
+    order_by: str | None = None,
+    direction: str = "forward",
     db: AsyncSession = Depends(get_db_session),
-) -> List[auth_schema.RoleResponse]:
+) -> CursorPaginatedResponse[auth_schema.RoleResponse]:
     """
-    List all roles with pagination.
+    List all roles with cursor-based pagination.
 
     Args:
-        pagination: Pagination parameters
+        cursor: Cursor for current position
+        limit: Number of items per page (default: 10)
+        order_by: Field to order by. Options: id, name, created_datetime, updated_datetime (default: id)
+        direction: Pagination direction: 'forward' or 'backward' (default: forward)
         db: Database session
 
     Returns:
-        List of roles
+        Cursor paginated list of roles
     """
     service = auth_services.RoleService(db)
-    roles = await service.list_roles(
-        skip=pagination.skip,
-        limit=pagination.limit,
+
+    pagination = CursorPaginationParams(
+        cursor=cursor, limit=limit, order_by=order_by, direction=direction
     )
-    return roles
+
+    (
+        items,
+        has_next,
+        has_previous,
+        next_cursor,
+        previous_cursor,
+    ) = await service.list_roles(
+        pagination=pagination,
+    )
+
+    return CursorPaginatedResponse.create(
+        items=items,
+        has_next=has_next,
+        has_previous=has_previous,
+        next_cursor=next_cursor,
+        previous_cursor=previous_cursor,
+    )
 
 
 @router.get(
