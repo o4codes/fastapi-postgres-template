@@ -126,8 +126,8 @@ class CursorPageInfo(BaseModel):
 class CursorPaginatedResponse(BaseModel, Generic[T]):
     """Generic cursor-paginated response."""
 
-    items: List[T]
     page_info: CursorPageInfo
+    items: List[T]
 
     model_config = ConfigDict(from_attributes=True)
 
