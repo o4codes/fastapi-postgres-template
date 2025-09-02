@@ -11,6 +11,7 @@ from app.api.authorization.services import RoleService
 from app.commons.exceptions import NotFoundException, ValidationError
 from app.commons.security import hash_password, verify_password
 
+
 class UserService:
     """Service for user operations."""
 
@@ -25,7 +26,7 @@ class UserService:
         if not user:
             raise NotFoundException(f"User with id {id} not found")
         return user
-        
+
     async def list_users(
         self,
         skip: int = 0,
@@ -58,7 +59,7 @@ class UserService:
         first_name: str,
         last_name: str,
         phone_number: Optional[str] = None,
-        middle_name: Optional[str] = None
+        middle_name: Optional[str] = None,
     ) -> User:
         """Create a new user."""
         # Check if email or phone already exists
@@ -66,7 +67,7 @@ class UserService:
             raise ValidationError(f"Email {email} is already taken")
         if phone_number and await self.get_by_phone(phone_number):
             raise ValidationError(f"Phone number {phone_number} is already taken")
-        
+
         # Hash password
         password = hash_password(password)
 
@@ -106,7 +107,7 @@ class UserService:
 
         # Create a schema object for update
         update_schema = UserUpdate(**update_data)
-        
+
         return await self.repository.update(id=user_id, schema=update_schema)
 
     async def delete(self, user: User) -> None:
@@ -134,7 +135,9 @@ class UserService:
             await self.session.refresh(user)
         return user
 
-    async def remove_direct_permission(self, user: User, permission: Permission) -> User:
+    async def remove_direct_permission(
+        self, user: User, permission: Permission
+    ) -> User:
         """Remove direct permission from user."""
         if permission in user.permissions:
             await self.repository.remove_direct_permission(user, permission.id)
@@ -170,26 +173,26 @@ class UserService:
     ) -> User:
         """
         Change a user's password.
-        
+
         Args:
             user_id: User ID
             current_password: Current password
             new_password: New password
-            
+
         Returns:
             Updated user
-            
+
         Raises:
             ValidationError: If current password is incorrect
         """
         user = await self.get_by_id(user_id)
-        
+
         # Verify current password
         if not verify_password(current_password, user.password):
             raise ValidationError("Current password is incorrect")
-        
+
         # Hash and update new password
         update_data = {"password": hash_password(new_password)}
         update_schema = UserUpdate(**update_data)
-        
+
         return await self.repository.update(id=user_id, schema=update_schema)

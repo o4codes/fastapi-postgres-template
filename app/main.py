@@ -14,6 +14,7 @@ settings = get_settings()
 # Setup logging
 setup_logger(debug_mode=settings.debug)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -36,11 +37,15 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Include routers
-app.include_router(authorization_endpoints.permission_router, prefix="/api/v1", tags=["Permissions"])
-app.include_router(authorization_endpoints.role_router, prefix="/api/v1", tags=["Roles"])
+app.include_router(
+    authorization_endpoints.permission_router, prefix="/api/v1", tags=["Permissions"]
+)
+app.include_router(
+    authorization_endpoints.role_router, prefix="/api/v1", tags=["Roles"]
+)
 app.include_router(health_endpoints.router, prefix="/api/v1")
 app.include_router(user_endpoints.router, prefix="/api/v1", tags=["Users"])

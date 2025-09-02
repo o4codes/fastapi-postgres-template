@@ -30,25 +30,27 @@ class Settings(BaseSettings):
         default="HS256",
         description="JWT token algorithm",
     )
-    
+
     postgres_user: str
     postgres_password: str
     postgres_host: str
     postgres_port: str
     postgres_db: str
-    
+
     # Redis settings
     redis_host: str = Field(default="localhost")
     redis_port: int = Field(default=6379)
     redis_password: str = Field(default=None)
 
+
 # Create a single instance of Settings
 _settings = Settings()
+
 
 def get_settings() -> Settings:
     """
     Returns the settings instance.
-    
+
     Returns:
         Settings: The application settings instance
     """

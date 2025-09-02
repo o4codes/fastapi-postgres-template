@@ -9,11 +9,12 @@ if TYPE_CHECKING:
     from app.api.authorization.models.permission import Permission
     from app.api.authorization.models.role import Role
 
+
 class RolePermission(UUIDMixin, TimestampMixin):
     """Association model for role-permission relationships."""
-    
+
     __tablename__ = "role_permissions"
-    
+
     role_id: Mapped[str] = mapped_column(
         ForeignKey("roles.id", ondelete="CASCADE"),
         nullable=False,

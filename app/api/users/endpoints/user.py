@@ -12,6 +12,7 @@ router = APIRouter(
     tags=["Users"],
 )
 
+
 @router.post(
     "",
     response_model=schema.UserResponse,
@@ -43,6 +44,7 @@ async def create_user(
     )
     return user
 
+
 @router.get(
     "",
     response_model=schema.UserList,
@@ -73,6 +75,7 @@ async def list_users(
     total = await service.count_users(include_deleted=include_deleted)
     return schema.UserList(total=total, items=users)
 
+
 @router.get(
     "/{user_id}",
     response_model=schema.UserResponse,
@@ -97,6 +100,7 @@ async def get_user(
     service = UserService(db)
     user = await service.get_by_id(user_id)
     return user
+
 
 @router.patch(
     "/{user_id}",
@@ -130,6 +134,7 @@ async def update_user(
     )
     return updated_user
 
+
 @router.delete(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -149,6 +154,7 @@ async def delete_user(
     service = UserService(db)
     user = await service.get_by_id(str(user_id))
     await service.delete(user)
+
 
 @router.post(
     "/{user_id}/restore",
@@ -173,6 +179,7 @@ async def restore_user(
     user = await service.get_by_id(str(user_id), include_deleted=True)
     restored_user = await service.restore(user)
     return restored_user
+
 
 @router.post(
     "/{user_id}/change-password",
@@ -203,6 +210,7 @@ async def change_password(
         new_password=data.new_password,
     )
     return updated_user
+
 
 @router.post(
     "/{user_id}/verify",

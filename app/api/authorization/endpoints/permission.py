@@ -14,6 +14,7 @@ router = APIRouter(
     tags=["Permissions"],
 )
 
+
 @router.post(
     "",
     response_model=auth_schema.PermissionResponse,
@@ -37,6 +38,7 @@ async def create_permission(
     service = auth_services.PermissionService(db)
     permission = await service.create_permission(data)
     return permission
+
 
 @router.get(
     "",
@@ -64,6 +66,7 @@ async def list_permissions(
     )
     return permissions
 
+
 @router.get(
     "/{permission_id}",
     response_model=auth_schema.PermissionResponse,
@@ -86,6 +89,7 @@ async def get_permission(
     service = auth_services.PermissionService(db)
     permission = await service.get_permission(permission_id)
     return permission
+
 
 @router.patch(
     "/{permission_id}",
@@ -111,6 +115,7 @@ async def update_permission(
     service = auth_services.PermissionService(db)
     permission = await service.update_permission(permission_id, data)
     return permission
+
 
 @router.delete(
     "/{permission_id}",

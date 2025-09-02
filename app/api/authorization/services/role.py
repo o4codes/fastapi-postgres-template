@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -9,6 +8,7 @@ from app.api.authorization.models import Role
 from app.api.authorization.repositories.permission import PermissionRepository
 from app.api.authorization.repositories.role import RoleRepository
 from app.api.authorization.schema.role import RoleCreate, RoleUpdate
+
 
 class RoleService:
     """Service layer for Role-related business logic."""
@@ -27,7 +27,7 @@ class RoleService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Role with name '{data.name}' already exists"
+                detail=f"Role with name '{data.name}' already exists",
             )
 
         # If this is set as default role, unset any existing default
@@ -45,26 +45,22 @@ class RoleService:
             if len(permissions) != len(data.permission_ids):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Some permission IDs are invalid"
+                    detail="Some permission IDs are invalid",
                 )
 
         # Create role
         role_data = data.model_dump(exclude={"permission_ids"})
         role = await self.role_repository.create(**role_data)
-        
+
         # Add permissions
         if permissions:
             role.permissions = permissions
             await self.db_session.commit()
             await self.db_session.refresh(role)
-            
+
         return role
 
-    async def update_role(
-        self,
-        role_id: UUID,
-        data: RoleUpdate
-    ) -> Role:
+    async def update_role(self, role_id: UUID, data: RoleUpdate) -> Role:
         """
         Update a role with business logic validation.
         """
@@ -72,8 +68,7 @@ class RoleService:
         role = await self.role_repository.get_with_permissions(role_id)
         if not role:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
             )
 
         # If name is being updated, check it doesn't conflict
@@ -82,7 +77,7 @@ class RoleService:
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Role with name '{data.name}' already exists"
+                    detail=f"Role with name '{data.name}' already exists",
                 )
 
         # If this is set as default role, unset any existing default
@@ -99,7 +94,7 @@ class RoleService:
             if len(permissions) != len(data.permission_ids):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Some permission IDs are invalid"
+                    detail="Some permission IDs are invalid",
                 )
             role.permissions = permissions
 
@@ -115,16 +110,11 @@ class RoleService:
         role = await self.role_repository.get_with_permissions(role_id)
         if not role:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
             )
         return role
 
-    async def list_roles(
-        self,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Role]:
+    async def list_roles(self, skip: int = 0, limit: int = 100) -> List[Role]:
         """
         List roles with pagination.
         """
@@ -137,12 +127,11 @@ class RoleService:
         role = await self.role_repository.get(role_id)
         if not role:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
             )
         if role.is_system:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot delete a system role"
+                detail="Cannot delete a system role",
             )
         await self.role_repository.delete(role)

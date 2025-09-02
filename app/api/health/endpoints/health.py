@@ -7,6 +7,7 @@ from app.commons.health import check_database, check_redis
 
 router = APIRouter(tags=["Health"])
 
+
 @router.get("/health")
 async def health_check(
     db: AsyncSession = Depends(get_db_session),
@@ -19,16 +20,19 @@ async def health_check(
     """
     db_status = await check_database(db)
     redis_status = await check_redis(redis)
-    
-    overall_status = "healthy" if all(
-        component["status"] == "healthy" 
-        for component in [db_status, redis_status]
-    ) else "unhealthy"
-    
+
+    overall_status = (
+        "healthy"
+        if all(
+            component["status"] == "healthy" for component in [db_status, redis_status]
+        )
+        else "unhealthy"
+    )
+
     return {
         "status": overall_status,
         "components": {
             "database": db_status,
             "redis": redis_status,
-        }
+        },
     }

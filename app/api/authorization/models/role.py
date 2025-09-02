@@ -9,11 +9,12 @@ if TYPE_CHECKING:
     from app.api.authorization.models.permission import Permission
     from app.api.authorization.models.role_permission import RolePermission
 
+
 class Role(UUIDMixin, TimestampMixin):
     """Role model for user roles and permissions."""
-    
+
     __tablename__ = "roles"
-    
+
     name: Mapped[str] = mapped_column(
         String(length=100),
         unique=True,
@@ -32,7 +33,7 @@ class Role(UUIDMixin, TimestampMixin):
         default=False,
         nullable=False,
     )
-    
+
     # Relationships
     permissions: Mapped[List["Permission"]] = relationship(
         "Permission",
@@ -40,13 +41,13 @@ class Role(UUIDMixin, TimestampMixin):
         lazy="selectin",  # Eager loading for permissions
         viewonly=True,  # Make this a read-only relationship
     )
-    
+
     role_permissions: Mapped[List["RolePermission"]] = relationship(
         "RolePermission",
         back_populates="role",
         cascade="all, delete-orphan",
     )
-    
+
     def __str__(self) -> str:
         return self.name
 

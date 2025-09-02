@@ -9,6 +9,7 @@ from app.api.authorization.models import Role
 from app.api.authorization.schema.role import RoleCreate, RoleUpdate
 from app.commons.repository import BaseRepository
 
+
 class RoleRepository(BaseRepository[Role, RoleCreate, RoleUpdate]):
     """Repository for handling direct database operations on Role entities."""
 

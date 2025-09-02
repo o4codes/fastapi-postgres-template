@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 
+
 async def check_database(db: AsyncSession) -> Dict[str, Any]:
     """Check database connection."""
     try:
@@ -17,6 +18,7 @@ async def check_database(db: AsyncSession) -> Dict[str, Any]:
             "status": "unhealthy",
             "message": f"Database connection failed: {str(e)}",
         }
+
 
 async def check_redis(redis: Redis) -> Dict[str, Any]:
     """Check Redis connection."""

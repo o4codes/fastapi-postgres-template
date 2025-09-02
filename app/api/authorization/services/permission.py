@@ -8,6 +8,7 @@ from app.api.authorization.models import Permission
 from app.api.authorization.repositories.permission import PermissionRepository
 from app.api.authorization.schema.permission import PermissionCreate, PermissionUpdate
 
+
 class PermissionService:
     """Service layer for Permission-related business logic."""
 
@@ -24,7 +25,7 @@ class PermissionService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Permission with code '{data.code}' already exists"
+                detail=f"Permission with code '{data.code}' already exists",
             )
 
         # Create permission
@@ -32,9 +33,7 @@ class PermissionService:
         return permission
 
     async def update_permission(
-        self,
-        permission_id: UUID,
-        data: PermissionUpdate
+        self, permission_id: UUID, data: PermissionUpdate
     ) -> Permission:
         """
         Update a permission with business logic validation.
@@ -43,8 +42,7 @@ class PermissionService:
         permission = await self.repository.get(permission_id)
         if not permission:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Permission not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
             )
 
         # If code is being updated, check it doesn't conflict
@@ -53,13 +51,12 @@ class PermissionService:
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Permission with code '{data.code}' already exists"
+                    detail=f"Permission with code '{data.code}' already exists",
                 )
 
         # Update permission
         updated_permission = await self.repository.update(
-            permission,
-            **data.model_dump(exclude_unset=True)
+            permission, **data.model_dump(exclude_unset=True)
         )
         return updated_permission
 
@@ -70,15 +67,12 @@ class PermissionService:
         permission = await self.repository.get(permission_id)
         if not permission:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Permission not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
             )
         return permission
 
     async def list_permissions(
-        self,
-        skip: int = 0,
-        limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> list[Permission]:
         """
         List permissions with pagination.
@@ -92,7 +86,6 @@ class PermissionService:
         permission = await self.repository.get(permission_id)
         if not permission:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Permission not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
             )
         await self.repository.delete(permission)

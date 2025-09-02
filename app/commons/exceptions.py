@@ -9,11 +9,12 @@ from sqlalchemy.exc import IntegrityError
 
 class AppException(Exception):
     """Base exception for application-specific errors."""
+
     def __init__(
         self,
         message: str,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ):
         self.message = message
         self.status_code = status_code
@@ -23,9 +24,11 @@ class AppException(Exception):
 
 def setup_exception_handlers(app: FastAPI) -> None:
     """Configure exception handlers for the application."""
-    
+
     @app.exception_handler(AppException)
-    async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    async def app_exception_handler(
+        request: Request, exc: AppException
+    ) -> JSONResponse:
         """Handle application-specific exceptions."""
         response = {
             "message": exc.message,
@@ -33,7 +36,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         }
         if exc.data:
             response["data"] = exc.data
-            
+
         return JSONResponse(
             status_code=exc.status_code,
             content=response,
@@ -41,8 +44,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ValidationError)
     async def validation_exception_handler(
-        request: Request,
-        exc: ValidationError
+        request: Request, exc: ValidationError
     ) -> JSONResponse:
         """Handle Pydantic validation errors."""
         return JSONResponse(
@@ -56,8 +58,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(IntegrityError)
     async def integrity_error_handler(
-        request: Request,
-        exc: IntegrityError
+        request: Request, exc: IntegrityError
     ) -> JSONResponse:
         """Handle database integrity errors."""
         logger.error(f"Database integrity error: {str(exc)}")
@@ -71,8 +72,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(
-        request: Request,
-        exc: Exception
+        request: Request, exc: Exception
     ) -> JSONResponse:
         """Handle any unhandled exceptions."""
         logger.error(f"Unhandled exception: {str(exc)}")

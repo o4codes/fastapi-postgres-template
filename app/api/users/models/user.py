@@ -2,25 +2,26 @@ from datetime import datetime
 import uuid
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import String, Boolean, DateTime, text
+from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.commons.models import TimestampMixin, UUIDMixin, SoftDeleteMixin
 
 if TYPE_CHECKING:
     from app.api.authorization.models import Role, Permission
+
+
 class User(UUIDMixin, TimestampMixin, SoftDeleteMixin):
     """User model with role-based access control."""
-    
+
     __tablename__ = "users"
-    
+
     public_id: Mapped[str] = mapped_column(
         String(length=36),
         unique=True,
         nullable=False,
         index=True,
-        default=lambda: str(uuid.uuid4())
+        default=lambda: str(uuid.uuid4()),
     )
     email: Mapped[str] = mapped_column(
         String(length=255),
@@ -64,7 +65,7 @@ class User(UUIDMixin, TimestampMixin, SoftDeleteMixin):
         DateTime(timezone=True),
         nullable=True,
     )
-    
+
     # Relationships
     roles: Mapped[List["Role"]] = relationship(
         "Role",
@@ -97,12 +98,9 @@ class User(UUIDMixin, TimestampMixin, SoftDeleteMixin):
         # Check direct permissions
         if any(p.code == permission_code for p in self.permissions):
             return True
-        
+
         # Check permissions through roles
-        return any(
-            role.has_permission(permission_code)
-            for role in self.roles
-        )
+        return any(role.has_permission(permission_code) for role in self.roles)
 
     def has_role(self, role_name: str) -> bool:
         """Check if user has a specific role."""

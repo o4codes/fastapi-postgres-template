@@ -6,10 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.authorization.models import RolePermission
-from app.api.authorization.schema.role_permission import RolePermissionCreate, RolePermissionUpdate
+from app.api.authorization.schema.role_permission import (
+    RolePermissionCreate,
+    RolePermissionUpdate,
+)
 from app.commons.repository import BaseRepository
 
-class RolePermissionRepository(BaseRepository[RolePermission, RolePermissionCreate, RolePermissionUpdate]):
+
+class RolePermissionRepository(
+    BaseRepository[RolePermission, RolePermissionCreate, RolePermissionUpdate]
+):
     """Repository for handling direct database operations on RolePermission entities."""
 
     def __init__(self, db_session: AsyncSession):

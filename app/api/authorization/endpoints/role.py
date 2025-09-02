@@ -14,6 +14,7 @@ router = APIRouter(
     tags=["Roles"],
 )
 
+
 @router.post(
     "",
     response_model=auth_schema.RoleResponse,
@@ -37,6 +38,7 @@ async def create_role(
     service = auth_services.RoleService(db)
     role = await service.create_role(data)
     return role
+
 
 @router.get(
     "",
@@ -64,6 +66,7 @@ async def list_roles(
     )
     return roles
 
+
 @router.get(
     "/{role_id}",
     response_model=auth_schema.RoleResponse,
@@ -86,6 +89,7 @@ async def get_role(
     service = auth_services.RoleService(db)
     role = await service.get_role(role_id)
     return role
+
 
 @router.patch(
     "/{role_id}",
@@ -111,6 +115,7 @@ async def update_role(
     service = auth_services.RoleService(db)
     role = await service.update_role(role_id, data)
     return role
+
 
 @router.delete(
     "/{role_id}",

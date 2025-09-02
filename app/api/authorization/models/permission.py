@@ -9,11 +9,12 @@ if TYPE_CHECKING:
     from app.api.authorization.models.role import Role
     from app.api.authorization.models.role_permission import RolePermission
 
+
 class Permission(UUIDMixin, TimestampMixin):
     """Permission model for defining access rights."""
-    
+
     __tablename__ = "permissions"
-    
+
     name: Mapped[str] = mapped_column(
         String(length=100),
         unique=True,
