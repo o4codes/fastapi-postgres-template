@@ -3,7 +3,7 @@ from typing import Any, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.commons.models import SoftDeleteMixin
@@ -36,7 +36,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         
         # Handle soft delete if model supports it
         if issubclass(self.model, SoftDeleteMixin):
-            query = query.where(self.model.deleted_at.is_(None))
+            query = query.where(self.model.deleted_datetime.is_(None))
             
         result = await self.db_session.execute(query)
         return result.scalar_one_or_none()
@@ -69,7 +69,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         
         # Handle soft delete if model supports it
         if issubclass(self.model, SoftDeleteMixin):
-            query = query.where(self.model.deleted_at.is_(None))
+            query = query.where(self.model.deleted_datetime.is_(None))
             
         result = await self.db_session.execute(query)
         obj = result.scalar_one_or_none()
@@ -104,7 +104,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         
         # Handle soft delete if model supports it
         if issubclass(self.model, SoftDeleteMixin):
-            query = query.where(self.model.deleted_at.is_(None))
+            query = query.where(self.model.deleted_datetime.is_(None))
             
         # Apply any additional filters
         for field, value in filters.items():
@@ -147,3 +147,27 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await self.db_session.commit()
             
         return True
+
+    async def count(self, **filters: Any) -> int:
+        """
+        Count records with optional filtering.
+        
+        Args:
+            **filters: Attribute-value pairs to filter by
+            
+        Returns:
+            int: Number of records matching the filters
+        """
+        query = select(func.count()).select_from(self.model)
+        
+        # Handle soft delete if model supports it
+        if issubclass(self.model, SoftDeleteMixin):
+            query = query.where(self.model.deleted_datetime.is_(None))
+            
+        # Apply any additional filters
+        for field, value in filters.items():
+            if hasattr(self.model, field):
+                query = query.where(getattr(self.model, field) == value)
+                
+        result = await self.db_session.execute(query)
+        return result.scalar_one()

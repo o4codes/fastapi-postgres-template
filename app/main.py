@@ -4,6 +4,7 @@ from loguru import logger
 
 from app.api.authorization import endpoints as authorization_endpoints
 from app.api.health import endpoints as health_endpoints
+from app.api.users import endpoints as user_endpoints
 from app.commons.exceptions import setup_exception_handlers
 from app.configs.logger import setup_logger
 from app.configs.settings import get_settings
@@ -42,3 +43,4 @@ app = FastAPI(
 app.include_router(authorization_endpoints.permission_router, prefix="/api/v1", tags=["Permissions"])
 app.include_router(authorization_endpoints.role_router, prefix="/api/v1", tags=["Roles"])
 app.include_router(health_endpoints.router, prefix="/api/v1")
+app.include_router(user_endpoints.router, prefix="/api/v1", tags=["Users"])
