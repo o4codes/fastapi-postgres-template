@@ -8,6 +8,8 @@ from app.api.users.services import UserService
 from app.configs.db import get_db_session
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
 from app.commons.dependencies.response import wrap_response
+from app.commons.dependencies.auth import CurrentActiveUser
+from app.commons.dependencies.permissions import requires_permissions, requires_roles
 from app.commons.schemas import ResponseWrapper
 
 router = APIRouter(
@@ -21,10 +23,15 @@ router = APIRouter(
     response_model=ResponseWrapper[schema.UserResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user",
+    dependencies=[
+        Depends(requires_permissions("user:create")),
+        Depends(requires_roles("admin", "user_manager")),
+    ],
 )
 async def create_user(
     data: schema.UserCreate,
     db: AsyncSession = Depends(get_db_session),
+    current_user: CurrentActiveUser = Depends(),
     response_wrapper: Callable = Depends(
         wrap_response(message="User created successfully")
     ),
@@ -55,6 +62,7 @@ async def create_user(
     "",
     response_model=CursorPaginatedResponse[schema.UserResponse],
     summary="List all users",
+    dependencies=[Depends(requires_permissions("user:list"))],
 )
 async def list_users(
     cursor: str | None = None,
@@ -63,6 +71,7 @@ async def list_users(
     direction: str = "forward",
     include_deleted: bool = False,
     db: AsyncSession = Depends(get_db_session),
+    current_user: CurrentActiveUser = Depends(),
     response_wrapper: Callable = Depends(wrap_response(paginated=True)),
 ) -> CursorPaginatedResponse[schema.UserResponse]:
     """
@@ -173,10 +182,15 @@ async def update_user(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a user",
+    dependencies=[
+        Depends(requires_permissions("user:delete")),
+        Depends(requires_roles("admin")),
+    ],
 )
 async def delete_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: CurrentActiveUser = Depends(),
 ) -> None:
     """
     Delete (soft-delete) a user.

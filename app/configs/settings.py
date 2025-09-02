@@ -31,6 +31,14 @@ class Settings(BaseSettings):
         description="JWT token algorithm",
     )
 
+    @property
+    def SECRET_KEY(self) -> str:
+        return self.jwt_secret_key
+
+    @property
+    def ALGORITHM(self) -> str:
+        return self.jwt_algorithm
+
     postgres_user: str
     postgres_password: str
     postgres_host: str

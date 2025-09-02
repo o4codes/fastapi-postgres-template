@@ -20,6 +20,18 @@ class RoleService:
         self.role_repository = RoleRepository(db_session)
         self.permission_repository = PermissionRepository(db_session)
 
+    async def get_user_roles(self, user_id: UUID) -> List[Role]:
+        """
+        Get all roles a user has.
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            List of roles the user has
+        """
+        return await self.role_repository.get_user_roles(user_id)
+
     async def create_role(self, data: RoleCreate) -> Role:
         """
         Create a new role with permissions and business logic validation.

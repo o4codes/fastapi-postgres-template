@@ -34,6 +34,18 @@ class PermissionService:
         permission = await self.repository.create(**data.model_dump())
         return permission
 
+    async def get_user_permissions(self, user_id: UUID) -> List[Permission]:
+        """
+        Get all permissions a user has through their roles.
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            List of permissions the user has
+        """
+        return await self.repository.get_user_permissions(user_id)
+
     async def update_permission(
         self, permission_id: UUID, data: PermissionUpdate
     ) -> Permission:
