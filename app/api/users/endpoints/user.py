@@ -1,4 +1,5 @@
 from uuid import UUID
+from typing import Callable
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,6 +7,8 @@ from app.api.users import schema
 from app.api.users.services import UserService
 from app.configs.db import get_db_session
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
+from app.commons.dependencies.response import wrap_response
+from app.commons.schema import ResponseWrapper
 
 router = APIRouter(
     prefix="/users",
@@ -15,13 +18,16 @@ router = APIRouter(
 
 @router.post(
     "",
-    response_model=schema.UserResponse,
+    response_model=ResponseWrapper[schema.UserResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user",
 )
 async def create_user(
     data: schema.UserCreate,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(
+        wrap_response(message="User created successfully")
+    ),
 ) -> schema.UserResponse:
     """
     Create a new user.
@@ -57,6 +63,7 @@ async def list_users(
     direction: str = "forward",
     include_deleted: bool = False,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(wrap_response(paginated=True)),
 ) -> CursorPaginatedResponse[schema.UserResponse]:
     """
     List all users with cursor-based pagination.
@@ -101,13 +108,14 @@ async def list_users(
 
 @router.get(
     "/{user_id}",
-    response_model=schema.UserResponse,
+    response_model=ResponseWrapper[schema.UserResponse],
     summary="Get user details",
 )
 async def get_user(
     user_id: UUID,
     include_deleted: bool = False,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(wrap_response()),
 ) -> schema.UserResponse:
     """
     Get user details by ID.
@@ -127,13 +135,16 @@ async def get_user(
 
 @router.patch(
     "/{user_id}",
-    response_model=schema.UserResponse,
+    response_model=ResponseWrapper[schema.UserResponse],
     summary="Update user details",
 )
 async def update_user(
     user_id: UUID,
     data: schema.UserUpdate,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(
+        wrap_response(message="User updated successfully")
+    ),
 ) -> schema.UserResponse:
     """
     Update user details.
@@ -181,12 +192,15 @@ async def delete_user(
 
 @router.post(
     "/{user_id}/restore",
-    response_model=schema.UserResponse,
+    response_model=ResponseWrapper[schema.UserResponse],
     summary="Restore a deleted user",
 )
 async def restore_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(
+        wrap_response(message="User restored successfully")
+    ),
 ) -> schema.UserResponse:
     """
     Restore a soft-deleted user.
@@ -206,13 +220,16 @@ async def restore_user(
 
 @router.post(
     "/{user_id}/change-password",
-    response_model=schema.UserResponse,
+    response_model=ResponseWrapper[schema.UserResponse],
     summary="Change user password",
 )
 async def change_password(
     user_id: UUID,
     data: schema.UserPasswordUpdate,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(
+        wrap_response(message="Password changed successfully")
+    ),
 ) -> schema.UserResponse:
     """
     Change user password.
@@ -237,12 +254,15 @@ async def change_password(
 
 @router.post(
     "/{user_id}/verify",
-    response_model=schema.UserResponse,
+    response_model=ResponseWrapper[schema.UserResponse],
     summary="Verify a user",
 )
 async def verify_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db_session),
+    response_wrapper: Callable = Depends(
+        wrap_response(message="User verified successfully")
+    ),
 ) -> schema.UserResponse:
     """
     Mark a user as verified.
