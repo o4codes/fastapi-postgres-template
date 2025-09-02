@@ -26,6 +26,7 @@ markdown-it-py==4.0.0
 MarkupSafe==3.0.2
 mdurl==0.1.2
 nodeenv==1.9.1
+passlib==1.7.4
 platformdirs==4.4.0
 pre_commit==4.3.0
 pydantic==2.11.7
