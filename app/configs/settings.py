@@ -50,6 +50,16 @@ class Settings(BaseSettings):
     redis_port: int = Field(default=6379)
     redis_password: str = Field(default=None)
 
+    # Email settings
+    smtp_host: str = Field(default="smtp.gmail.com")
+    smtp_port: int = Field(default=587)
+    smtp_username: str
+    smtp_password: str
+    smtp_from_email: str
+    smtp_from_name: str = Field(default="FastAPI App")
+    smtp_tls: bool = Field(default=True)
+    smtp_ssl: bool = Field(default=False)
+
 
 # Create a single instance of Settings
 _settings = Settings()
