@@ -1,6 +1,5 @@
 from uuid import UUID
 
-from typing import Callable
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,8 +7,7 @@ from app.api.authorization import schema as auth_schema
 from app.api.authorization import services as auth_services
 from app.configs.db import get_db_session
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
-from app.commons.dependencies.responses import wrap_response
-from app.commons.schemas import ResponseWrapper
+from app.commons.schemas import APIResponse
 
 router = APIRouter(
     prefix="/roles",
@@ -19,16 +17,13 @@ router = APIRouter(
 
 @router.post(
     "",
-    response_model=ResponseWrapper[auth_schema.RoleResponse],
+    response_model=APIResponse[auth_schema.RoleResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new role",
 )
 async def create_role(
     data: auth_schema.RoleCreate,
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(
-        wrap_response(message="Role created successfully")
-    ),
 ) -> auth_schema.RoleResponse:
     """
     Create a new role with the provided data.
@@ -42,7 +37,7 @@ async def create_role(
     """
     service = auth_services.RoleService(db)
     role = await service.create_role(data)
-    return role
+    return APIResponse(status=True, message="Role created successfully", data=role)
 
 
 @router.get(
@@ -56,7 +51,6 @@ async def list_roles(
     order_by: str | None = None,
     direction: str = "forward",
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(wrap_response(paginated=True)),
 ) -> CursorPaginatedResponse[auth_schema.RoleResponse]:
     """
     List all roles with cursor-based pagination.
@@ -98,13 +92,12 @@ async def list_roles(
 
 @router.get(
     "/{role_id}",
-    response_model=ResponseWrapper[auth_schema.RoleResponse],
+    response_model=APIResponse[auth_schema.RoleResponse],
     summary="Get a specific role",
 )
 async def get_role(
     role_id: UUID,
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(wrap_response()),
 ) -> auth_schema.RoleResponse:
     """
     Get a specific role by ID.
@@ -118,21 +111,18 @@ async def get_role(
     """
     service = auth_services.RoleService(db)
     role = await service.get_role(role_id)
-    return role
+    return APIResponse(status=True, message="Retrieved role details", data=role)
 
 
 @router.patch(
     "/{role_id}",
-    response_model=ResponseWrapper[auth_schema.RoleResponse],
+    response_model=APIResponse[auth_schema.RoleResponse],
     summary="Update a role",
 )
 async def update_role(
     role_id: UUID,
     data: auth_schema.RoleUpdate,
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(
-        wrap_response(message="Role updated successfully")
-    ),
 ) -> auth_schema.RoleResponse:
     """
     Update a role with the provided data.
@@ -147,7 +137,7 @@ async def update_role(
     """
     service = auth_services.RoleService(db)
     role = await service.update_role(role_id, data)
-    return role
+    return APIResponse(status=True, message="Role updated successfully", data=role)
 
 
 @router.delete(

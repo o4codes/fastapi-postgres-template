@@ -1,6 +1,5 @@
 from uuid import UUID
 
-from typing import Callable
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,8 +7,7 @@ from app.api.authorization import schema as auth_schema
 from app.api.authorization import services as auth_services
 from app.configs.db import get_db_session
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
-from app.commons.dependencies.responses import wrap_response
-from app.commons.schemas import ResponseWrapper
+from app.commons.schemas import APIResponse
 
 router = APIRouter(
     prefix="/permissions",
@@ -19,16 +17,13 @@ router = APIRouter(
 
 @router.post(
     "",
-    response_model=ResponseWrapper[auth_schema.PermissionResponse],
+    response_model=APIResponse[auth_schema.PermissionResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new permission",
 )
 async def create_permission(
     data: auth_schema.PermissionCreate,
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(
-        wrap_response(message="Permission created successfully")
-    ),
 ) -> auth_schema.PermissionResponse:
     """
     Create a new permission with the provided data.
@@ -42,7 +37,9 @@ async def create_permission(
     """
     service = auth_services.PermissionService(db)
     permission = await service.create_permission(data)
-    return permission
+    return APIResponse(
+        status=True, message="Permission created successfully", data=permission
+    )
 
 
 @router.get(
@@ -56,7 +53,6 @@ async def list_permissions(
     order_by: str | None = None,
     direction: str = "forward",
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(wrap_response(paginated=True)),
 ) -> CursorPaginatedResponse[auth_schema.PermissionResponse]:
     """
     List all permissions with cursor-based pagination.
@@ -98,13 +94,12 @@ async def list_permissions(
 
 @router.get(
     "/{permission_id}",
-    response_model=ResponseWrapper[auth_schema.PermissionResponse],
+    response_model=APIResponse[auth_schema.PermissionResponse],
     summary="Get a specific permission",
 )
 async def get_permission(
     permission_id: UUID,
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(wrap_response()),
 ) -> auth_schema.PermissionResponse:
     """
     Get a specific permission by ID.
@@ -118,21 +113,20 @@ async def get_permission(
     """
     service = auth_services.PermissionService(db)
     permission = await service.get_permission(permission_id)
-    return permission
+    return APIResponse(
+        status=True, message="Retrieved permission details", data=permission
+    )
 
 
 @router.patch(
     "/{permission_id}",
-    response_model=ResponseWrapper[auth_schema.PermissionResponse],
+    response_model=APIResponse[auth_schema.PermissionResponse],
     summary="Update a permission",
 )
 async def update_permission(
     permission_id: UUID,
     data: auth_schema.PermissionUpdate,
     db: AsyncSession = Depends(get_db_session),
-    response_wrapper: Callable = Depends(
-        wrap_response(message="Permission updated successfully")
-    ),
 ) -> auth_schema.PermissionResponse:
     """
     Update a permission with the provided data.
@@ -147,7 +141,9 @@ async def update_permission(
     """
     service = auth_services.PermissionService(db)
     permission = await service.update_permission(permission_id, data)
-    return permission
+    return APIResponse(
+        status=True, message="Permission updated successfully", data=permission
+    )
 
 
 @router.delete(
