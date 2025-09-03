@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, TypeVar, Generic
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -47,11 +47,11 @@ class AuditSchema(BaseSchema):
 """Common schema definitions."""
 
 
-class ResponseWrapper(BaseModel, Generic[T]):
+class APIResponse(BaseModel, Generic[T]):
     """Standard API response wrapper."""
 
-    status: bool
-    message: str
+    status: bool = Field(default=True)
+    message: str = Field(default="Success")
     data: T
 
     model_config = ConfigDict(from_attributes=True)

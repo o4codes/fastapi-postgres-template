@@ -1,7 +1,7 @@
-"""Authentication endpoints."""
-from fastapi import APIRouter
+from .auth import router as auth_router
+from .two_factor import router as two_factor_router
 
-from app.api.authentication.endpoints.auth import router as auth_router
-
-router = APIRouter()
-router.include_router(auth_router)
+__all__ = [
+    "auth_router",
+    "two_factor_router",
+]
