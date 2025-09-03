@@ -36,10 +36,12 @@ pydantic==2.11.7
 pydantic-settings==2.10.1
 pydantic_core==2.33.2
 Pygments==2.19.2
+pyotp==2.9.0
 python-dotenv==1.1.1
 python-jose==3.5.0
 python-multipart==0.0.20
 PyYAML==6.0.2
+qrcode==8.2
 redis==6.4.0
 rich==14.1.0
 rich-toolkit==0.15.0
