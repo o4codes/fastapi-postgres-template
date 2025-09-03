@@ -1,7 +1,9 @@
 """Two-Factor Authentication schemas."""
 from datetime import datetime
 from typing import List, Optional
+
 from pydantic import BaseModel
+from app.commons.schemas import UUIDSchema, TimestampSchema
 
 
 class Enable2FARequest(BaseModel):
@@ -31,12 +33,11 @@ class Disable2FARequest(BaseModel):
     password: str
 
 
-class TwoFactorAuthInfo(BaseModel):
+class TwoFactorAuthInfo(UUIDSchema, TimestampSchema):
     """2FA info schema."""
 
     is_enabled: bool
-    created_at: datetime
-    last_used_at: Optional[datetime]
-    remaining_backup_codes: int
+    remaining_backup_codes: str
+    last_used_datetime: Optional[datetime]
 
     model_config = {"from_attributes": True}

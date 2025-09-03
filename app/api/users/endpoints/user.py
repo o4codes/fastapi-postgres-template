@@ -5,11 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.users import schema
 from app.api.users.services import UserService
 from app.configs.db import get_db_session
+from app.commons.dependencies.permissions import requires_permissions
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
 from app.commons.schemas import APIResponse
 
 router = APIRouter(
-    prefix="/users",
+    prefix="/admin/users",
     tags=["Users"],
 )
 
@@ -19,10 +20,7 @@ router = APIRouter(
     response_model=APIResponse[schema.UserResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user",
-    # dependencies=[
-    #     Depends(requires_permissions("user:create")),
-    #     Depends(requires_roles("admin", "user_manager")),
-    # ],
+    dependencies=[Depends(requires_permissions("user:create"))],
 )
 async def create_user(
     data: schema.UserCreate,
@@ -54,7 +52,7 @@ async def create_user(
     "",
     response_model=CursorPaginatedResponse[schema.UserResponse],
     summary="List all users",
-    # dependencies=[Depends(requires_permissions("user:list"))],
+    dependencies=[Depends(requires_permissions("user:list"))],
 )
 async def list_users(
     cursor: str | None = None,
@@ -109,6 +107,7 @@ async def list_users(
     "/{user_id}",
     response_model=APIResponse[schema.UserResponse],
     summary="Get user details",
+    dependencies=[Depends(requires_permissions("user:read"))],
 )
 async def get_user(
     user_id: UUID,
@@ -135,6 +134,7 @@ async def get_user(
     "/{user_id}",
     response_model=APIResponse[schema.UserResponse],
     summary="Update user details",
+    dependencies=[Depends(requires_permissions("user:update"))],
 )
 async def update_user(
     user_id: UUID,
@@ -172,10 +172,7 @@ async def update_user(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a user",
-    # dependencies=[
-    #     Depends(requires_permissions("user:delete")),
-    #     Depends(requires_roles("admin")),
-    # ],
+    dependencies=[Depends(requires_permissions("user:delete"))],
 )
 async def delete_user(
     user_id: UUID,
@@ -191,66 +188,3 @@ async def delete_user(
     service = UserService(db)
     user = await service.get_by_id(str(user_id))
     await service.delete(user)
-
-
-@router.post(
-    "/{user_id}/change-password",
-    response_model=APIResponse[schema.UserResponse],
-    summary="Change user password",
-)
-async def change_password(
-    user_id: UUID,
-    data: schema.UserPasswordUpdate,
-    db: AsyncSession = Depends(get_db_session),
-) -> schema.UserResponse:
-    """
-    Change user password.
-
-    Args:
-        user_id: User ID
-        data: Password update data
-        db: Database session
-
-    Returns:
-        Updated user details
-    """
-    service = UserService(db)
-    user = await service.get_by_id(str(user_id))
-    updated_user = await service.change_password(
-        user,
-        current_password=data.current_password,
-        new_password=data.new_password,
-    )
-    return APIResponse(
-        status=True,
-        message="Password changed successfully",
-        data=updated_user,
-    )
-
-
-@router.post(
-    "/{user_id}/verify",
-    response_model=APIResponse[schema.UserResponse],
-    summary="Verify a user",
-)
-async def verify_user(
-    user_id: UUID,
-    db: AsyncSession = Depends(get_db_session),
-) -> schema.UserResponse:
-    """
-    Mark a user as verified.
-
-    Args:
-        user_id: User ID
-        db: Database session
-
-    Returns:
-        Updated user details
-    """
-    service = UserService(db)
-    verified_user = await service.verify_user(user_id)
-    return APIResponse(
-        status=True,
-        message="User verified successfully",
-        data=verified_user,
-    )

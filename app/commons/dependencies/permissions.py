@@ -90,7 +90,7 @@ def requires_permissions(*permissions: str):
     Args:
         *permissions: Required permission codes
     """
-    return Depends(PermissionChecker(permissions))
+    return PermissionChecker(permissions)
 
 
 def requires_roles(*roles: str):
@@ -100,4 +100,4 @@ def requires_roles(*roles: str):
     Args:
         *roles: Required role codes
     """
-    return Depends(RoleChecker(roles))
+    return RoleChecker(roles)
