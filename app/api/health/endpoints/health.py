@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 
-from app.configs.db import get_db_session, get_redis_client
+from app.configs.db import get_db_session
+from app.configs.cache import get_redis_client
 from app.commons.health import check_database, check_redis
 
 router = APIRouter(tags=["Health"])

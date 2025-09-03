@@ -7,8 +7,7 @@ from app.api.users import schema
 from app.api.users.services import UserService
 from app.configs.db import get_db_session
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
-from app.commons.dependencies.response import wrap_response
-from app.commons.dependencies.auth import CurrentActiveUser
+from app.commons.dependencies.responses import wrap_response
 from app.commons.dependencies.permissions import requires_permissions, requires_roles
 from app.commons.schemas import ResponseWrapper
 
@@ -31,7 +30,6 @@ router = APIRouter(
 async def create_user(
     data: schema.UserCreate,
     db: AsyncSession = Depends(get_db_session),
-    current_user: CurrentActiveUser = Depends(),
     response_wrapper: Callable = Depends(
         wrap_response(message="User created successfully")
     ),
@@ -71,7 +69,6 @@ async def list_users(
     direction: str = "forward",
     include_deleted: bool = False,
     db: AsyncSession = Depends(get_db_session),
-    current_user: CurrentActiveUser = Depends(),
     response_wrapper: Callable = Depends(wrap_response(paginated=True)),
 ) -> CursorPaginatedResponse[schema.UserResponse]:
     """
@@ -190,7 +187,6 @@ async def update_user(
 async def delete_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db_session),
-    current_user: CurrentActiveUser = Depends(),
 ) -> None:
     """
     Delete (soft-delete) a user.

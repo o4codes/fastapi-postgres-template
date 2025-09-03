@@ -5,16 +5,20 @@ from redis.asyncio import Redis
 
 from app.api.authentication import schema as auth_schema
 from app.api.authentication.services.auth import AuthService
-from app.configs.db import get_db_session, get_redis_client
+from app.configs.db import get_db_session
+from app.configs.cache import get_redis_client
 from app.commons.schemas import ResponseWrapper
 from app.commons.dependencies.auth import CurrentUser
+from app.commons.dependencies.responses import ResponseWrapperRoute
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(
+    prefix="/auth", tags=["Authentication"], route_class=ResponseWrapperRoute
+)
 
 
 @router.post(
-    "/login",
-    response_model=ResponseWrapper[auth_schema.LoginResponse],
+    "/token",
+    response_model=auth_schema.LoginResponse,
 )
 async def login(
     credentials: auth_schema.LoginRequest,
@@ -31,7 +35,6 @@ async def login(
 @router.post(
     "/password-reset/request",
     status_code=status.HTTP_202_ACCEPTED,
-    response_model=ResponseWrapper[None],
 )
 async def request_password_reset(
     request: auth_schema.PasswordResetRequest,
@@ -46,7 +49,6 @@ async def request_password_reset(
 
 @router.post(
     "/password-reset/confirm",
-    response_model=ResponseWrapper[None],
 )
 async def reset_password(
     reset_data: auth_schema.PasswordResetConfirm,
@@ -62,7 +64,7 @@ async def reset_password(
 
 @router.post(
     "/2fa/setup",
-    response_model=ResponseWrapper[auth_schema.Enable2FAResponse],
+    response_model=auth_schema.Enable2FAResponse,
 )
 async def setup_2fa(
     current_user: CurrentUser,
@@ -75,7 +77,6 @@ async def setup_2fa(
 
 @router.post(
     "/2fa/enable",
-    response_model=ResponseWrapper[None],
 )
 async def enable_2fa(
     request: auth_schema.Enable2FARequest,
@@ -89,7 +90,6 @@ async def enable_2fa(
 
 @router.post(
     "/2fa/disable",
-    response_model=ResponseWrapper[None],
 )
 async def disable_2fa(
     request: auth_schema.Disable2FARequest,
@@ -97,6 +97,8 @@ async def disable_2fa(
     db: AsyncSession = Depends(get_db_session),
 ) -> None:
     """Disable 2FA for current user."""
+    auth_service = AuthService(db)
+    await auth_service.disable_2fa(current_user.id, request.password, request.totp_code)
     auth_service = AuthService(db)
     await auth_service.disable_2fa(current_user.id, request.password, request.totp_code)
 

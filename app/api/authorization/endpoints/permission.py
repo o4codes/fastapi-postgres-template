@@ -8,7 +8,7 @@ from app.api.authorization import schema as auth_schema
 from app.api.authorization import services as auth_services
 from app.configs.db import get_db_session
 from app.commons.pagination import CursorPaginationParams, CursorPaginatedResponse
-from app.commons.dependencies.response import wrap_response
+from app.commons.dependencies.responses import wrap_response
 from app.commons.schemas import ResponseWrapper
 
 router = APIRouter(
