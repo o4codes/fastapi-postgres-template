@@ -6,6 +6,7 @@ from loguru import logger
 
 from app.api.authentication import endpoints as authentication_endpoints
 from app.api.authorization import endpoints as authorization_endpoints
+from app.api.file_management import endpoints as file_management_endpoints
 from app.api.health import endpoints as health_endpoints
 from app.api.notifications import endpoints as notification_endpoints
 from app.api.users import endpoints as user_endpoints
@@ -68,6 +69,9 @@ app.include_router(
 )
 app.include_router(
     authorization_endpoints.role_router, prefix="/api/v1", tags=["Roles"]
+)
+app.include_router(
+    file_management_endpoints.router, prefix="/api/v1", tags=["File Management"]
 )
 app.include_router(health_endpoints.router, prefix="/api/v1", tags=["Health"])
 app.include_router(

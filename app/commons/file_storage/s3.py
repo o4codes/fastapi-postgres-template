@@ -2,9 +2,10 @@ import aioboto3
 from typing import Optional, BinaryIO
 from botocore.exceptions import ClientError
 from loguru import logger
+from .base import BaseFileStorage
 
 
-class S3Storage:
+class S3Storage(BaseFileStorage):
     """AWS S3 file storage service."""
 
     def __init__(
@@ -22,7 +23,11 @@ class S3Storage:
         )
 
     async def upload_file(
-        self, file: BinaryIO, key: str, content_type: Optional[str] = None
+        self,
+        file: BinaryIO,
+        key: str,
+        filename: str,
+        content_type: Optional[str] = None,
     ) -> bool:
         """Upload file to S3."""
         try:
@@ -62,9 +67,7 @@ class S3Storage:
             logger.error(f"Failed to delete file from S3: {e}")
             return False
 
-    async def get_presigned_url(
-        self, key: str, expiration: int = 3600
-    ) -> Optional[str]:
+    async def get_download_url(self, key: str, expiration: int = 3600) -> Optional[str]:
         """Generate presigned URL for file access."""
         try:
             async with self.session.client("s3") as s3:

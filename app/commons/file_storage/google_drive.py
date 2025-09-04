@@ -5,9 +5,10 @@ from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
 from googleapiclient.errors import HttpError
 from loguru import logger
+from .base import BaseFileStorage
 
 
-class GoogleDriveStorage:
+class GoogleDriveStorage(BaseFileStorage):
     """Google Drive file storage service."""
 
     def __init__(self, service_account_path: str, folder_id: Optional[str] = None):
@@ -16,8 +17,12 @@ class GoogleDriveStorage:
         self.service = build("drive", "v3", credentials=credentials)
 
     async def upload_file(
-        self, file: BinaryIO, filename: str, content_type: Optional[str] = None
-    ) -> Optional[str]:
+        self,
+        file: BinaryIO,
+        key: str,
+        filename: str,
+        content_type: Optional[str] = None,
+    ) -> bool:
         """Upload file to Google Drive."""
         try:
             file_metadata = {"name": filename}
@@ -35,13 +40,14 @@ class GoogleDriveStorage:
             )
 
             file_id = result.get("id")
+            self._last_uploaded_id = file_id
             logger.info(
                 f"Successfully uploaded file to Google Drive: {filename} (ID: {file_id})"
             )
-            return file_id
+            return True
         except HttpError as e:
             logger.error(f"Failed to upload file to Google Drive: {e}")
-            return None
+            return False
 
     async def download_file(self, file_id: str, file_path: str) -> bool:
         """Download file from Google Drive."""
@@ -94,15 +100,15 @@ class GoogleDriveStorage:
         except HttpError:
             return False
 
-    async def create_public_link(self, file_id: str) -> Optional[str]:
+    async def get_download_url(self, key: str) -> Optional[str]:
         """Create public sharing link for file."""
         try:
             self.service.permissions().create(
-                fileId=file_id, body={"role": "reader", "type": "anyone"}
+                fileId=key, body={"role": "reader", "type": "anyone"}
             ).execute()
 
             result = (
-                self.service.files().get(fileId=file_id, fields="webViewLink").execute()
+                self.service.files().get(fileId=key, fields="webViewLink").execute()
             )
 
             return result.get("webViewLink")
