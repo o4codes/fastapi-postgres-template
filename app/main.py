@@ -6,7 +6,7 @@ from app.api.authentication import endpoints as authentication_endpoints
 from app.api.authorization import endpoints as authorization_endpoints
 from app.api.health import endpoints as health_endpoints
 from app.api.users import endpoints as user_endpoints
-from app.commons.exceptions import EXCEPTION_HANDLERS
+from app.commons.errors import EXCEPTION_HANDLERS_MAPPING
 from app.configs.logger import setup_logger
 from app.configs.settings import get_settings
 
@@ -34,11 +34,11 @@ app = FastAPI(
     title=settings.project_name,
     version=settings.version,
     description=settings.description,
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    docs_url="/api/docs/swagger",
+    redoc_url="/api/docs/redoc",
+    openapi_url="/api/docs/openapi.json",
     lifespan=lifespan,
-    exception_handlers=EXCEPTION_HANDLERS,
+    exception_handlers=EXCEPTION_HANDLERS_MAPPING,
 )
 
 
