@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 
 from app.api.users.models import User
 from app.commons import security
-from app.commons.email_sender import AsyncEmailSender
+from app.commons.notifications import AsyncEmailSender
 from app.configs.settings import get_settings
 
 settings = get_settings()

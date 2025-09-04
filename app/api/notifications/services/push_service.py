@@ -3,12 +3,14 @@ from sqlalchemy import select, delete
 
 from app.api.notifications.models import PushToken
 from app.api.notifications.schema import PushTokenCreate, PushNotificationSend
+from app.commons.notifications import FCMService
 from loguru import logger
 
 
 class PushNotificationService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, fcm_service: FCMService = None):
         self.db = db
+        self.fcm_service = fcm_service or FCMService()
 
     async def register_token(self, user_id: str, data: PushTokenCreate) -> PushToken:
         """Register a push notification token."""
@@ -46,27 +48,31 @@ class PushNotificationService:
         """Send push notification to users."""
         try:
             if data.user_ids:
-                # Send to specific users
                 query = select(PushToken).where(PushToken.user_id.in_(data.user_ids))
             else:
-                # Send to all users
                 query = select(PushToken)
 
             result = await self.db.execute(query)
             tokens = result.scalars().all()
 
-            # Here you would integrate with actual push notification service
-            # like Firebase FCM, Apple Push Notification service, etc.
-            logger.info(f"Sending push notification to {len(tokens)} devices")
-            logger.info(f"Title: {data.title}, Message: {data.message}")
+            if not tokens:
+                logger.warning("No push tokens found for notification")
+                return False
 
-            # Placeholder for actual push notification logic
-            for token in tokens:
-                logger.info(
-                    f"Sending to {token.platform} device: {token.token[:20]}..."
-                )
+            token_strings = [token.token for token in tokens]
 
-            return True
+            fcm_result = await self.fcm_service.send_to_tokens(
+                tokens=token_strings,
+                title=data.title,
+                body=data.message,
+                data=data.data,
+            )
+
+            logger.info(
+                f"FCM result: {fcm_result['success_count']} success, {fcm_result['failure_count']} failures"
+            )
+            return fcm_result["success_count"] > 0
+
         except Exception as e:
             logger.error(f"Failed to send push notification: {e}")
             return False
