@@ -6,7 +6,7 @@ from app.api.authentication import endpoints as authentication_endpoints
 from app.api.authorization import endpoints as authorization_endpoints
 from app.api.health import endpoints as health_endpoints
 from app.api.users import endpoints as user_endpoints
-from app.commons.exceptions import setup_exception_handlers
+from app.commons.exceptions import EXCEPTION_HANDLERS
 from app.configs.logger import setup_logger
 from app.configs.settings import get_settings
 
@@ -24,7 +24,6 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting up FastAPI application")
-    setup_exception_handlers(app)
     yield
     # Shutdown
     logger.info("Shutting down FastAPI application")
@@ -39,6 +38,7 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
+    exception_handlers=EXCEPTION_HANDLERS,
 )
 
 
