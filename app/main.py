@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi_events.middleware import EventHandlerASGIMiddleware
+from fastapi_events.handlers.local import local_handler
 from loguru import logger
 
 from app.api.authentication import endpoints as authentication_endpoints
@@ -46,6 +48,10 @@ app = FastAPI(
 # Add middlewares
 app.add_middleware(TimingMiddleware)
 app.add_middleware(RequestIDMiddleware)
+app.add_middleware(
+    EventHandlerASGIMiddleware,
+    handlers=[local_handler],
+)
 
 
 # Include routers
