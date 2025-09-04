@@ -7,6 +7,7 @@ from app.api.authorization import endpoints as authorization_endpoints
 from app.api.health import endpoints as health_endpoints
 from app.api.users import endpoints as user_endpoints
 from app.commons.errors import EXCEPTION_HANDLERS_MAPPING
+from app.commons.middlewares import RequestIDMiddleware, TimingMiddleware
 from app.configs.logger import setup_logger
 from app.configs.settings import get_settings
 
@@ -40,6 +41,10 @@ app = FastAPI(
     lifespan=lifespan,
     exception_handlers=EXCEPTION_HANDLERS_MAPPING,
 )
+
+# Add middlewares
+app.add_middleware(TimingMiddleware)
+app.add_middleware(RequestIDMiddleware)
 
 
 # Include routers
